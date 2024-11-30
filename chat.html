@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console Chat</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #121212;
+            color: #00ff00;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+        }
+        #container {
+            width: 90%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            height: 90%;
+        }
+        #chat {
+            flex: 1;
+            background-color: #000;
+            color: #00ff00;
+            padding: 10px;
+            overflow-y: auto;
+            border: 1px solid #00ff00;
+        }
+        #inputContainer {
+            display: flex;
+            margin-top: 10px;
+        }
+        #messageInput {
+            flex: 1;
+            background-color: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px;
+        }
+        #messageInput:focus {
+            outline: none;
+        }
+        #sendButton {
+            background-color: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        #sendButton:hover {
+            background-color: #00cc00;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="chat"></div>
+        <div id="inputContainer">
+            <input id="messageInput" type="text" placeholder="Type your message...">
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chat');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        let ws;
+        let isWebSocketOpen = false;
+        let userColor;
+        let username;
+        
+        function generateRandomColor() {
+            return `hsl(${Math.floor(Math.random() * 360)}, 100%, 75%)`;
+        }
+        
+        function getUserColor() {
+            const savedColor = localStorage.getItem('userColor');
+            if (savedColor) {
+                return savedColor;
+            } else {
+                const newColor = generateRandomColor();
+                localStorage.setItem('userColor', newColor);
+                return newColor;
+            }
+        }
+        
+        function connectWebSocket() {
+            ws = new WebSocket("ws://your-host/ws"); //wss fot https
+
+            ws.onopen = function () {
+                console.log("WebSocket connection established.");
+                addMessage("💡 Connected to the chat!");
+                isWebSocketOpen = true;
+            };
+
+            ws.onmessage = function (event) {
+                addMessage(event.data);
+            };
+
+            ws.onclose = function () {
+                addMessage("💡 Connection closed.");
+                isWebSocketOpen = false;
+            };
+
+            ws.onerror = function (error) {
+                console.error("WebSocket error:", error);
+                addMessage("💡 Error connecting to the chat.");
+            };
+        }
+        
+        function addMessage(text) {
+            const messageElement = document.createElement('div');
+            
+            if (text.startsWith('💡')) {
+                messageElement.style.color = '#00ff00';
+            } else {
+                messageElement.style.color = userColor;
+            }
+
+            messageElement.textContent = text;
+            chat.appendChild(messageElement);
+            chat.scrollTop = chat.scrollHeight;
+        }
+        
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message && isWebSocketOpen) {
+                ws.send(message);
+                messageInput.value = '';
+            } else if (!isWebSocketOpen) {
+                console.error("WebSocket not open. Unable to send message.");
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        window.onload = function () {
+            userColor = getUserColor();
+            connectWebSocket();
+        };
+    </script>
+</body>
+</html>
