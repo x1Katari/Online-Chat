@@ -6,4 +6,4 @@
 
 - uvicorn main:app --host <your-host> --port <your-port> --reload
 
-![Example](https://ibb.co/qCkD4FH)
+![Example](assets/example.png)
