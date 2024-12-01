@@ -23,15 +23,7 @@ async def websocket_endpoint(websocket: WebSocket):
     username = names.get_full_name(gender='male')
     user_id = str(uuid4())
     clients[websocket] = {'username': username, 'user_id': user_id}
-
-    if len(clients) >= 5:
-        await websocket.send_text("💡 Chat is full. Try again later.")
-        await websocket.close()
-        for client in clients.keys():
-            await client.close()
-            clients.pop(client)
-        return None
-
+    
     for message in message_history:
         await websocket.send_text(message)
 
